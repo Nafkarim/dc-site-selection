@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Center Siting Dashboard</title>
+<style>
+:root{--bg:#f6f5f1;--panel:#fff;--ink:#1c1f23;--mut:#5f6670;--line:#dedbd2;--acc:#0b5cab;--good:#1b7a46;--bad:#b3341f;--warn:#9a6a00;
+--c0:#2a7f8e;--c1:#8a5a9e;--c2:#c8682b;--c3:#3e5fa8;--c4:#1f8a4c;--c5:#a68a1c;--heat:#0b5cab}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14171a;--panel:#1d2126;--ink:#e8eaed;--mut:#9aa3ad;--line:#333a42;--acc:#6aa9e8;--good:#5cc489;--bad:#ef8a76;--warn:#e0b04a;
+--c0:#5bbccb;--c1:#c093d6;--c2:#ea9660;--c3:#7e9ee0;--c4:#5cc489;--c5:#d9bf55;--heat:#6aa9e8}}
+:root[data-theme=dark]{--bg:#14171a;--panel:#1d2126;--ink:#e8eaed;--mut:#9aa3ad;--line:#333a42;--acc:#6aa9e8;--good:#5cc489;--bad:#ef8a76;--warn:#e0b04a;
+--c0:#5bbccb;--c1:#c093d6;--c2:#ea9660;--c3:#7e9ee0;--c4:#5cc489;--c5:#d9bf55;--heat:#6aa9e8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 24px 12px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:20px;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:12.5px;max-width:760px}
+button{font:inherit;color:inherit;cursor:pointer}
+.ghost{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--mut)}
+.wrap{display:grid;grid-template-columns:290px 1fr;gap:20px;padding:20px 24px;max-width:1380px;margin:0 auto}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;padding:16px}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.rail h3,.panel h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 11px;font-size:12.5px}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.sl{margin:10px 0}
+.sl label{display:flex;justify-content:space-between;font-size:12.5px}
+.sl input{width:100%;accent-color:var(--acc)}
+.tog{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:12.5px}
+.banner{border-left:4px solid var(--acc);padding:12px 16px;margin-bottom:16px}
+.banner b{font-size:16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--mut)}
+.tab.on{color:var(--ink);border-color:var(--acc);font-weight:600}
+.pane{display:none}.pane.on{display:block}
+.row{display:grid;grid-template-columns:150px 1fr 92px;gap:10px;align-items:center;padding:6px 0;cursor:pointer;border-radius:6px}
+.row:hover{background:color-mix(in srgb,var(--acc) 7%,transparent)}
+.row.sel{outline:1.5px solid var(--acc)}
+.bar{height:20px;background:var(--line);border-radius:4px;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;transition:width .25s}
+.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.delta{font-size:11.5px;color:var(--mut);font-weight:400}
+.up{color:var(--good)}.dn{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;cursor:pointer;white-space:nowrap}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.pill{display:inline-block;border-radius:4px;padding:0 6px;font-size:11px;border:1px solid var(--line);color:var(--mut)}
+.note{color:var(--mut);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin:6px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+svg text{fill:var(--mut);font-size:11px}
+.memo h4{margin:14px 0 4px;font-size:14px}.memo ul{margin:4px 0 8px 18px;padding:0}
+.hm td{text-align:center;color:#fff;font-weight:600;font-size:11.5px;padding:8px 4px;border:2px solid var(--panel)}
+@media print{.rail,.tabs{display:none}.pane{display:block!important}.wrap{display:block}}
+</style>
+</head>
+<body>
+<header>
+ <div>
+  <h1>Hyperscale Data Center Siting Dashboard</h1>
+  <div class="sub">Six candidate metros, 18 variables, 7 weighted categories. Scores are relative to these six markets only. Public data as of 7 Oct 2026; portfolio analysis, not investment or legal advice. Source of truth: <code>DC_Site_Scoring_Model.xlsx</code>.</div>
+ </div>
+ <button class="ghost" id="theme">Toggle theme</button>
+</header>
+
+<div class="wrap">
+ <aside class="rail panel" style="align-self:start">
+  <h3>Scenario</h3>
+  <div class="chips" id="chips"></div>
+  <h3>Category weights <span id="wsum" class="pill"></span></h3>
+  <div id="sliders"></div>
+  <label class="tog"><input type="checkbox" id="srcOnly"><span><b>Sourced data only</b><br><span class="note">Drops variables where more than a third of the score is analyst judgment.</span></span></label>
+  <p><button class="ghost" id="reset">Reset to scenario</button></p>
+  <p class="note" id="judg"></p>
+ </aside>
+
+ <main>
+  <div class="panel banner" id="banner"></div>
+  <div class="tabs" id="tabs"></div>
+
+  <section class="pane panel" id="p-rank">
+   <h3>Ranking under current weights <span class="note">(click a market for detail)</span></h3>
+   <div id="rank"></div>
+   <p class="note">Arrows compare with Base. "Range" is best-to-worst rank across the six named scenarios.</p>
+   <h3 style="margin-top:18px">Rank by scenario</h3>
+   <div class="tw"><table id="rtab"></table></div>
+  </section>
+
+  <section class="pane panel" id="p-mkt">
+   <div class="chips" id="mchips"></div>
+   <div class="grid2">
+    <div><h3>Category profile (0-100)</h3><div id="radar"></div></div>
+    <div><h3>Key inputs</h3><div class="tw"><table id="kv"></table></div></div>
+   </div>
+   <h3 style="margin-top:16px">Evidence</h3>
+   <div class="tw"><table id="facts"></table></div>
+  </section>
+
+  <section class="pane panel" id="p-sens">
+   <h3>Power weight sweep (other categories scaled pro rata)</h3>
+   <div id="sweep"></div><div class="legend" id="slegend"></div>
+   <p class="note" id="sweepnote"></p>
+   <h3 style="margin-top:18px">Power x latency weight: who leads?</h3>
+   <div class="tw"><table class="hm" id="heat"></table></div>
+   <p class="note" id="heatnote"></p>
+  </section>
+
+  <section class="pane panel" id="p-var">
+   <h3>Variable explorer <span class="note">(click headers to sort)</span></h3>
+   <div class="tw"><table id="vtab"></table></div>
+  </section>
+
+  <section class="pane panel memo" id="p-memo"></section>
+ </main>
+</div>
+
+<script>
+const D={"markets": ["Seattle / Quincy, WA", "Hillsboro / Portland, OR", "Phoenix, AZ", "Northern Virginia", "Dallas-Fort Worth, TX", "Columbus, OH"], "categories": ["Power & Grid", "Market & Pricing", "Network & Latency", "Risk & Resilience", "Policy & Incentives", "Build & Operations", "Growth Headroom"], "scenarios": {"Base": [0.3, 0.2, 0.12, 0.15, 0.08, 0.05, 0.1], "Power-first": [0.45, 0.15, 0.08, 0.12, 0.06, 0.04, 0.1], "Latency-first": [0.2, 0.15, 0.3, 0.12, 0.06, 0.05, 0.12], "Cost-first": [0.25, 0.3, 0.08, 0.1, 0.15, 0.04, 0.08], "Risk/Regulatory-first": [0.22, 0.12, 0.08, 0.28, 0.18, 0.04, 0.08], "Speed-to-market": [0.35, 0.25, 0.1, 0.08, 0.06, 0.04, 0.12]}, "variables": [{"id": "A1", "cat": "Power & Grid", "name": "Industrial electricity price (state average)", "unit": "cents/kWh", "type": "numeric", "better": "lower", "transform": "none", "values": [6.61, 8.05, 7.9, 8.99, 6.12, 7.1], "confidence": "Verified (state-level)", "sources": "S1", "notes": "EIA Electric Power Annual, 2024 data (WA, OR, AZ, VA, TX, OH). State averages: actual large-load tariffs differ (Grant PUD is far below WA avg; Oregon data-center class rose ~30% in 2026 under POWER Act, S23). EIA reports industrial prices up ~6% over the past year nationally.", "judgment": 0, "share": 0.35}, {"id": "A2", "cat": "Power & Grid", "name": "Time to power for a new large load", "unit": "months", "type": "numeric", "better": "lower", "transform": "none", "values": [48.0, 48.0, 60.0, 84.0, 36.0, 84.0], "confidence": "Reported + estimates", "sources": "S11, S12, S13, S15, S16, S20", "notes": "NoVA 84 (JLL: ~7 yrs for 100 MW); Columbus 84 and Phoenix 60 (industry blog, S12); DFW 36 (reports of 24-36+ months, ERCOT batch study began Sep 2026). Seattle/Quincy and Hillsboro = ANALYST ESTIMATE of 48 (national avg is ~4 yrs per JLL; Grant PUD multi-year allocation queue; no >=5 MW free in Hillsboro).", "judgment": 0.33, "share": 0.35}, {"id": "A3", "cat": "Power & Grid", "name": "Large-load tariff / contract burden (5 = most burdensome)", "unit": "score 1-5", "type": "rubric", "better": "lower", "transform": "none", "values": [3.0, 5.0, 4.0, 4.0, 4.0, 5.0], "confidence": "Analyst score", "sources": "S15-S18, S20, S22-S25", "notes": "Rubric: take-or-pay minimums, collateral/security, cost allocation, curtailment. Columbus 5 (85% min demand, 8-12 yr terms, 180-day notice); Hillsboro 5 (Schedule 96: 20 MW+ self-funds distribution, ~90% minimums, ~30% rate rise); Phoenix 4 (APS load commitment agreements, proposed DC rate increase); NoVA 4 (new DC rate class, batch queue); DFW 4 (SB6: financial security, fees, curtailment rights); Quincy 3 (Grant PUD load limits and a large-load tariff).", "judgment": 1.0, "share": 0.15}, {"id": "A4", "cat": "Power & Grid", "name": "Grid clean-power profile (5 = cleanest)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [5.0, 4.0, 3.0, 3.0, 3.0, 2.0], "confidence": "Analyst score", "sources": "S19, general knowledge", "notes": "Qualitative: hydro-dominated (Columbia basin) = 5; PNW mix = 4; solar/gas/nuclear AZ = 3; Dominion gas+nuclear = 3; ERCOT wind/solar/gas = 3; AEP Ohio/PJM coal+gas = 2. Replace with EIA state generation-mix data for a production version.", "judgment": 1.0, "share": 0.15}, {"id": "B1", "cat": "Market & Pricing", "name": "Colocation vacancy rate", "unit": "%", "type": "numeric", "better": "higher", "transform": "none", "values": [3.8, 0.21, 3.0, 0.24, 1.8, 0.1], "confidence": "Reported (mixed vintages)", "sources": "S2, S4, S6, S7, S8, S9, S19", "notes": "NoVA 0.24 (CBRE H1'26); Hillsboro 0.21 (CBRE H1'26); DFW 1.8 (CBRE Q1'26); Columbus 0.1 (JLL 2026 via S9); Phoenix 3.0 (JLL mid-2025 - STALE, latest figure retrieved); Seattle 3.8 (aggregator S19, low reliability).", "judgment": 0, "share": 0.2}, {"id": "B2", "cat": "Market & Pricing", "name": "Immediately available capacity", "unit": "MW", "type": "numeric", "better": "higher", "transform": "log", "values": [28.2, 1.0, 31.0, 10.8, 39.6, 3.5], "confidence": "Reported + derived", "sources": "S2, S5, S8, S9", "notes": "Hillsboro ~1.0 MW (CBRE YE2025; none >=5 MW contiguous); NoVA 10.8 MW (CBRE H1'26); DFW 39.6 MW (Q2'26); Phoenix 31 MW (JLL mid-2025). Seattle and Columbus DERIVED = inventory x vacancy. Log-scaled so one big number does not dominate.", "judgment": 0, "share": 0.3}, {"id": "B3", "cat": "Market & Pricing", "name": "Wholesale asking rent (midpoint of published range)", "unit": "$/kW-month", "type": "numeric", "better": "lower", "transform": "none", "values": [155.0, 200.0, 190.0, 212.5, 150.0, 145.0], "confidence": "Reported + 1 estimate", "sources": "S4, S5, S10", "notes": "Hillsboro 175-225 (CBRE H2'25); Phoenix 170-210 (CBRE 250-500 kW); NoVA 190-235 (CBRE Q1'26, 250-500 kW); DFW 130-170 and Columbus 125-165 (JLL mid-2025, 1-5 MW tier). Seattle/Quincy = ESTIMATE of 155 (no published figure retrieved; low power cost, limited colo). Size tiers differ - treat as directional.", "judgment": 0.17, "share": 0.35}, {"id": "B4", "cat": "Market & Pricing", "name": "Installed colocation inventory (market depth)", "unit": "MW", "type": "numeric", "better": "higher", "transform": "log", "values": [742.0, 475.4, 1069.2, 4496.5, 1432.8, 3541.0], "confidence": "Reported (definitions differ)", "sources": "S2, S5, S9, S19", "notes": "CBRE colocation inventory for Hillsboro, Phoenix, NoVA, DFW. Columbus figure is JLL Central Ohio (includes large self-build/hyperscale, so not like-for-like). Seattle = 742 MW per aggregator (S19). Log-scaled.", "judgment": 0, "share": 0.15}, {"id": "C1", "cat": "Network & Latency", "name": "Network / interconnection ecosystem (5 = best)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [3.0, 4.0, 3.0, 5.0, 4.0, 3.0], "confidence": "Analyst score", "sources": "S2, S35, general knowledge", "notes": "NoVA 5 (world's densest interconnection hub); Hillsboro 4 (subsea landing stations, one of two West Coast sites); DFW 4 (central US hub); Seattle 3 (Westin Building strong, Quincy more limited); Phoenix 3 and Columbus 3 (growing). CBRE notes >20,000 route-miles of new fiber announced in 2026.", "judgment": 1.0, "share": 0.5}, {"id": "C2", "cat": "Network & Latency", "name": "Population-weighted estimated fiber RTT to 13 largest US metros", "unit": "ms (est.)", "type": "numeric", "better": "lower", "transform": "none", "values": [41.8697011540024, 43.8843830568976, 33.7427668168748, 23.7964825705447, 24.9893664944578, 22.7245526343867], "confidence": "Calculated (physics estimate)", "sources": "Latency sheet", "notes": "Great-circle distance x route factor, at ~200 km/ms in glass. Not a measured latency; edit assumptions on the Latency sheet. Real user distribution of the deployment would change this.", "judgment": 0.5, "share": 0.5}, {"id": "D1", "cat": "Risk & Resilience", "name": "Natural-hazard exposure (5 = highest)", "unit": "score 1-5", "type": "rubric", "better": "lower", "transform": "none", "values": [2.0, 3.0, 5.0, 2.0, 5.0, 2.0], "confidence": "Mixed: NRI-based + analyst", "sources": "S29, S30, S31, S34", "notes": "FEMA NRI v1.20 context: Maricopa County is among the 5 riskiest US counties (S29); Dallas County in the top 10 and top for hail in the first NRI (S30); Loudoun County scored lowest (2021 release); Grant County WA 44/100 'moderate' (derived, S31). Hillsboro and Columbus are ANALYST scores. Official county NRI composite scores could not be pulled automatically - replace with the NRI data download.", "judgment": 0.67, "share": 0.35}, {"id": "D2", "cat": "Risk & Resilience", "name": "Water stress (5 = extremely high)", "unit": "score 1-5", "type": "rubric", "better": "lower", "transform": "none", "values": [2.0, 2.0, 5.0, 3.0, 3.0, 1.0], "confidence": "Mixed: WRI-based + analyst", "sources": "S32, S33, S34", "notes": "WRI Aqueduct via S32: Phoenix 'extremely high', Northern Virginia 'medium-high (seasonal)'. Columbus: city water administrator says excess supply (S33). Texas has a statewide supply shortfall (DFW scored 3). Seattle and Hillsboro are ANALYST scores.", "judgment": 0.67, "share": 0.3}, {"id": "D3", "cat": "Risk & Resilience", "name": "Local approval / moratorium risk (5 = highest)", "unit": "score 1-5", "type": "rubric", "better": "lower", "transform": "none", "values": [3.0, 5.0, 3.0, 4.0, 3.0, 3.0], "confidence": "Analyst score", "sources": "S2, S22, S35, S19", "notes": "Hillsboro 5 (120-day moratorium Jul 2026, enterprise-zone tax limits); NoVA 4 (CBRE: land, permitting, power; community opposition); Seattle/Quincy 3 (Quincy pro-development, but Seattle proper paused >20 MVA applications in 2026); Phoenix, DFW, Columbus 3 (growing local opposition; CBRE says community acceptance now ranks with power as a constraint).", "judgment": 1.0, "share": 0.35}, {"id": "E1", "cat": "Policy & Incentives", "name": "Data-center sales-tax exemption status (5 = intact and stable)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [3.0, 1.0, 1.0, 4.0, 4.0, 1.0], "confidence": "Verified status, analyst scale", "sources": "S21, S26-S28, S35", "notes": "AZ: 3-year pause on new certificates (Jul 2026-Jun 2029). OH: new applications paused 27 May 2026. OR: HB 4084 temporarily restricts the enterprise-zone exemption. WA: new builds still eligible, replacement-equipment exemption repealed Jul 2026. VA: exemption survived 2026 budget fight (energy tax added). TX: intact, but repeal is reportedly a 2027 priority.", "judgment": 0, "share": 1.0}, {"id": "F1", "cat": "Build & Operations", "name": "Construction labor / contractor availability (5 = best)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [2.0, 3.0, 4.0, 3.0, 5.0, 3.0], "confidence": "Analyst score (low confidence)", "sources": "none - judgment", "notes": "No sourced data. Judgment: DFW deepest trades pool; Quincy remote and thin; others competitive with heavy concurrent construction. Replace with BLS electrician/construction employment data.", "judgment": 1.0, "share": 0.5}, {"id": "F2", "cat": "Build & Operations", "name": "Climate / free-cooling suitability (5 = best)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [4.0, 4.0, 1.0, 3.0, 2.0, 3.0], "confidence": "Analyst score", "sources": "general knowledge", "notes": "Cool/dry PNW = best; hot Phoenix = worst; humid summers in NoVA, DFW, Columbus in between. Replace with cooling-degree-day data.", "judgment": 1.0, "share": 0.5}, {"id": "G1", "cat": "Growth Headroom", "name": "Expansion headroom to 100+ MW within ~5 years (5 = best)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [2.0, 1.0, 3.0, 2.0, 4.0, 3.0], "confidence": "Analyst score", "sources": "S2, S20, S24, S25, S13, S9, S16", "notes": "Quincy 2 (Grant PUD requests ~900 MW vs ~350 MW uncommitted); Hillsboro 1 (no space, moratorium); Phoenix 3 (APS hasn't committed to new DC load since Jan, but 2 GW gas plant planned 2031-33); NoVA 2 (40 GW queue, earliest new blocks late 2028); DFW 4 (3.7 GW planned, 765 MW under construction); Columbus 3 (AEP pipeline cut by more than half after tariff).", "judgment": 1.0, "share": 0.6}, {"id": "G2", "cat": "Growth Headroom", "name": "Bridging / behind-the-meter power feasibility (5 = best)", "unit": "score 1-5", "type": "rubric", "better": "higher", "transform": "none", "values": [2.0, 1.0, 4.0, 2.0, 5.0, 3.0], "confidence": "Analyst score", "sources": "S2, S25, S9", "notes": "DFW 5 (CBRE: behind-the-meter gaining acceptance); Phoenix 4 (gas pipeline expansion, up to 1.2 GW behind-the-meter capacity); Columbus 3 (nuclear/BTM announcements); NoVA 2 (permitting; Vantage built own turbines); Quincy 2 (hydro-limited); Hillsboro 1.", "judgment": 1.0, "share": 0.4}], "facts": [{"topic": "Utility / grid", "by": ["Grant County PUD (Quincy); Seattle City Light / PSE (Seattle core). Western Interconnection; hydro-based.", "Portland General Electric (Pacific Power elsewhere in OR). Western Interconnection.", "APS and SRP. Desert Southwest.", "Dominion Energy Virginia inside PJM.", "Oncor and others inside ERCOT.", "AEP Ohio inside PJM."]}, {"topic": "Power queue / availability", "by": ["Grant PUD: data-center requests above ~900 MW vs roughly 350 MW of uncommitted hydro; load-growth limits and a high-demand tariff (S19, S20).", "No facility with >=5 MW contiguous; ~1.0 MW available at YE2025; >90% of 170.3 MW under construction preleased (S5, S6).", "APS has not committed to new data-center customers since January 2026; 10-18 GW pending; SRP aims to double generation in 10 years (S24, S25).", "Dominion: >40 GW pending requests; up to ~7 years for 100 MW; earliest new blocks late 2028; 10.8 MW available (S2, S11, S13).", "ERCOT: ~427-474 GW of large-load requests; Batch Zero study began Sep 2026; 765 MW under construction, ~95% preleased; 3.7 GW planned (S2, S15).", "AEP Ohio pipeline fell from roughly 30 GW to 13 GW after tariff; long timelines reported (S12, S18)."]}, {"topic": "Tariff / contract terms", "by": ["New high-demand industrial tariff at Grant PUD to recover grid upgrade costs (S19).", "Schedule 96 (POWER Act): 20 MW+ self-fund distribution, ~90% minimum demand charge; data-center class up ~29.7% (S22, S23).", "APS load-commitment agreements; proposed ~45% increase for data-center rate class (S24).", "New data-center rate class under review; batch process caps projects at 300 MW (S14, S36).", "SB6: $50M security per GW, study fees from $100k, curtailment rights during load shed (S16).", "85% minimum demand, 8-12 year terms, 180 days' notice, study fee $10k-$100k (S17, S18)."]}, {"topic": "Local approvals / moratoria", "by": ["Seattle paused applications over 20 MVA in 2026; Quincy and Grant County generally pro-development (S19).", "Hillsboro 120-day moratorium (July 2026) on new applications (S22).", "Municipal restrictions and community opposition narrowing powered-land supply (S2).", "Land, permitting and power constraints; community opposition (S2).", "Extended rezoning and entitlement timelines (S2).", "Some local moratoria; state bills on tariffs and incentives pending (S18)."]}, {"topic": "Tax incentives", "by": ["New builds still exempt from sales tax on equipment; replacement-equipment exemption repealed Jul 2026 (S21).", "HB 4084 temporarily restricts enterprise-zone property-tax exemption (S2, S35).", "3-year pause on new sales-tax exemption certificates, 1 Jul 2026 to 30 Jun 2029 (S26).", "Sales-tax exemption retained in 2026 budget; energy tax added; politically contested (S26, S28).", "Exemption intact; repeal flagged as possible 2027 priority (S27, S28).", "New exemption applications paused since 27 May 2026; bills pending (S27, S28)."]}, {"topic": "Water / hazard notes", "by": ["Moderate NRI composite for Grant County; wildfire and air quality are the drivers (S31).", "Cascadia seismic risk (analyst note).", "WRI 'extremely high' water stress; Maricopa among top-5 NRI counties; Colorado River cuts (S29, S32).", "Medium-high seasonal water stress; Potomac supply risk; First Street flags high composite climate risk (S32, S34).", "Dallas: top hail risk, top-10 NRI (first release); 2025 flooding hit substations in a major Texas market (S30, S34).", "City says supply is ample (S33); tornado and winter-storm exposure (analyst note)."]}, {"topic": "Notable operators / activity", "by": ["Sabey, Vantage, Microsoft, H5 in Quincy; Sabey 45 MW build-to-suit (S19).", "STACK 121 MW expansion; NTT, Flexential, Aligned (S2, S5).", "Aligned, QTS, Vantage, STACK, Prime; absorbed 260+ MW in H1 2026 (S2).", "STACK 1 GW Stafford campus; AWS land in Loudoun; Digital Realty acquisitions (S2).", "Behind-the-meter projects accepted; West Texas emerging as alternative (S2).", "Meta, Google, AWS, Microsoft campuses; Meta Prometheus >1 GW in New Albany (S9)."]}], "latency": {"route_factor": 1.5, "speed": 200.0, "metros": [{"name": "New York", "pop": 19.5, "rtt": [55.2651512343197, 59.2391928511841, 51.6441393837333, 5.25306537294965, 33.0806258860318, 11.4931116052846]}, {"name": "Los Angeles", "pop": 12.8, "rtt": [22.0761368744433, 20.0667197869154, 8.61369262849753, 54.7737113465158, 29.8697308126781, 47.6388844411143]}, {"name": "Chicago", "pop": 9.3, "rtt": [39.0216978252675, 42.7169428840902, 35.0395818142148, 13.7017949730912, 19.4245541896893, 6.65491568932141]}, {"name": "Dallas-Fort Worth", "pop": 8.1, "rtt": [37.8005703262449, 39.7100648471424, 21.3424489928903, 28.0273945553602, 0.0, 22.0260283090508]}, {"name": "Houston", "pop": 7.5, "rtt": [42.908612568632, 44.5928310499433, 24.4774281253637, 28.9880844910924, 5.43384470385068, 23.9546702511135]}, {"name": "Washington DC", "pop": 6.4, "rtt": [53.261085253628, 57.0266315102404, 47.7286711452454, 0.628531466142553, 28.5280245617832, 7.87754076180166]}, {"name": "Atlanta", "pop": 6.3, "rtt": [49.7115421739405, 52.7125790389629, 38.3412862327019, 12.785655906776, 17.3720792125772, 10.5221875003467]}, {"name": "Philadelphia", "pop": 6.2, "rtt": [54.5398659499912, 58.4341656177758, 50.1487039692568, 3.34953189779752, 31.3137568035895, 10.0078090972916]}, {"name": "Miami", "pop": 6.2, "rtt": [63.0946417011633, 65.6621437585659, 47.7680677823373, 22.4708142878155, 26.8093112005989, 24.005748767164]}, {"name": "Phoenix", "pop": 5.1, "rtt": [24.9906518832578, 24.503637506254, 0.0, 47.1462714349559, 21.3424489928903, 40.1610491540784]}, {"name": "Boston", "pop": 4.9, "rtt": [57.3627244308578, 61.4974893418076, 55.3981632416705, 9.83284484611842, 37.3957302653992, 15.5038078577583]}, {"name": "San Francisco Bay", "pop": 4.6, "rtt": [16.0894453824068, 12.9458185420807, 15.7630984309487, 58.1594815373428, 35.7427798265531, 50.908052319923]}, {"name": "Seattle", "pop": 4.1, "rtt": [2.86953170212922, 3.56713800559341, 26.9077975853471, 55.4215409031472, 40.5439595830214, 48.4799258728276]}]}, "sources": [{"id": "S1", "source": "EIA - Electric Power Annual (2024 data): average revenue per kWh by state", "url": "https://www.eia.gov/electricity/Annual/secrev-map.php", "reliability": "High", "used": "Industrial power price"}, {"id": "S2", "source": "Data Center Frontier - CBRE North America Data Center Trends H1 2026 (28 Aug 2026)", "url": "https://www.datacenterfrontier.com/site-selection/news/55401462/cbre-record-data-center-construction-fails-to-ease-capacity-crunch", "reliability": "Medium", "used": "Vacancy, availability, construction, moratoria, tax, take-or-pay trends"}, {"id": "S3", "source": "CBRE press release - North American demand outpaces supply (H1 2026)", "url": "https://www.cbre.com/press-releases/north-american-data-center-demand-continues-to-outpace-supply-despite-record-construction-activity", "reliability": "High", "used": "National vacancy, absorption, rents"}, {"id": "S4", "source": "CBRE - Global Data Center Trends 2026", "url": "https://www.cbre.com/insights/reports/global-data-center-trends-2026", "reliability": "High", "used": "DFW vacancy 1.8%, NoVA 0.3%, rents"}, {"id": "S5", "source": "CBRE - Hillsboro market, H2 2025 (press release)", "url": "https://www.cbre.com/press-releases/hillsboro-data-center-market-sees-strong-demand-in-2025-amid-record-national-growth", "reliability": "High", "used": "Hillsboro inventory, vacancy, rent range"}, {"id": "S6", "source": "CBRE - Hillsboro, OR market page, H1 2026", "url": "https://www.cbre.com/insights/books/north-america-data-center-trends-h1-2026/hillsboro-or-data-center-market", "reliability": "High", "used": "Hillsboro 0.21% vacancy, no >=5 MW, 170.3 MW under construction"}, {"id": "S7", "source": "JLL - North America Data Center Report, Midyear 2026", "url": "https://www.jll.com/en-us/insights/market-dynamics/north-america-data-centers", "reliability": "High", "used": "National vacancy ~1%, frontier markets"}, {"id": "S8", "source": "AZ Big Media - JLL Midyear 2025 Phoenix", "url": "https://azbigmedia.com/real-estate/big-deals/industrial/phoenix-ranked-no-2-in-us-for-planned-data-center-development/", "reliability": "Medium", "used": "Phoenix vacancy 3%, 31 MW (mid-2025, stale)"}, {"id": "S9", "source": "Apollo Technical - Top US data center markets (cites CBRE Q2 2026 and JLL 2026)", "url": "https://www.apollotechnical.com/top-data-center-markets/", "reliability": "Low", "used": "DFW 1,432.8 MW / 39.6 MW available; Phoenix 1,069.2 MW; Columbus 0.1% vacancy"}, {"id": "S10", "source": "GoDataCenters - Colocation pricing by market 2026 (JLL midyear 2025 ranges)", "url": "https://godatacenters.com/blog/colocation-pricing-by-market-2026", "reliability": "Low", "used": "Phoenix, DFW, Columbus rent ranges"}, {"id": "S11", "source": "ConstructionOwners - How long it takes to power a data center in 2026 (JLL Outlook)", "url": "https://www.constructionowners.com/insights/how-long-it-actually-takes-to-power-a-data-center-in-2026-a-u-s-market-by-market-reality-check", "reliability": "Low", "used": "NoVA ~7 yrs, national avg 4 yrs, Phoenix/Columbus context"}, {"id": "S12", "source": "Avanza Energy (Substack) - lead time to power by market", "url": "https://avanzaenergy.substack.com/p/data-centers-are-killing-the-grid", "reliability": "Low", "used": "Columbus 84 months, Phoenix/Atlanta 60 months"}, {"id": "S13", "source": "Datacentres.com - Northern Virginia market (29 Aug 2026)", "url": "https://www.datacentres.com/news/northern-virginia-data-centre-market-4-650-mw-live-as-dominion-s-40-gw-interconn-slot2-2026-08-29", "reliability": "Low", "used": "Dominion >40 GW pending requests; new blocks not before late 2028"}, {"id": "S14", "source": "Virginia Mercury - Dominion large-load queue standards", "url": "https://virginiamercury.com/?p=47424", "reliability": "Medium", "used": "Dominion batch process, 300 MW cap per project"}, {"id": "S15", "source": "ERCOT - Senate Business & Commerce update (29 Jul 2026)", "url": "https://www.ercot.com/files/docs/2026/07/29/ERCOT-Senate-July-29-Panel-1-Assessing-The-Grid.pdf", "reliability": "High", "used": "~474 GW large-load requests, Batch Zero study"}, {"id": "S16", "source": "Compute Heat Rate (Substack) - Texas SB6 and the queue", "url": "https://computeheatrate.substack.com/p/the-queue-survived-even-thrived-with", "reliability": "Low", "used": "SB6 security deposit, fees, curtailment"}, {"id": "S17", "source": "AEP Ohio - Data Center Tariff page", "url": "https://www.aepohio.com/company/about/rates/data-center-tariff", "reliability": "High", "used": "85% minimum demand, study fees"}, {"id": "S18", "source": "Data Center Dynamics - PUCO requires 180 days' notice from data centers", "url": "https://www.datacenterdynamics.com/en/news/ohio-regulators-direct-data-center-firms-to-provide-utility-aep-ohio-with-180-days-notice-prior-to-grid-connection/", "reliability": "Medium", "used": "Ohio 180-day notice, pipeline cut"}, {"id": "S19", "source": "Datacentres.com - Seattle market: 742 MW online (23 Aug 2026)", "url": "https://www.datacentres.com/news/seattle-data-centre-market-742-mw-online-as-central-washington-s-hydropower-corr-slot2-2026-08-23", "reliability": "Low", "used": "Seattle inventory/vacancy, Grant PUD queue"}, {"id": "S20", "source": "GovTech - Grant County PUD to cap data center electricity", "url": "https://www.govtech.com/artificial-intelligence/grant-county-wash-utility-to-cap-data-center-electricity", "reliability": "Medium", "used": "Grant PUD load-growth limits"}, {"id": "S21", "source": "Ballard Spahr - Washington 2026 session, SB 6231", "url": "https://www.ballardspahr.com/insights/alerts-and-articles/2026/04/washington-state-2026-session-legislature-repeals-and-rolls-back-certain-recently-enacted-taxes", "reliability": "High", "used": "WA replacement-equipment exemption repealed"}, {"id": "S22", "source": "KATU - Hillsboro 120-day data center moratorium", "url": "https://katu.com/news/local/hillsboro-pauses-new-ai-data-centers-whats-next-over-the-next-120-days-portland-oregon-big-tech-green-environment-climate-change-water-local-community-utilities-money", "reliability": "Medium", "used": "Hillsboro moratorium, POWER Act ~30% DC rate rise"}, {"id": "S23", "source": "KATU - PGE rates under the POWER Act", "url": "https://katu.com/news/local/pge-customers-to-see-reduced-rates-at-the-expense-of-data-centers-general-electriccustomers-money-commercial-big-business-rate-hike-local-budget", "reliability": "Medium", "used": "29.7% DC rate increase"}, {"id": "S24", "source": "KJZZ - APS cannot commit to new data centers (2 Sep 2026)", "url": "https://www.kjzz.org/business/2026-09-02/aps-says-it-cant-commit-to-new-data-centers-because-of-electric-grid-constraints", "reliability": "Medium", "used": "APS no new commitments since January"}, {"id": "S25", "source": "Data Center Dynamics - APS 2 GW gas plant under subscription model", "url": "https://www.datacenterdynamics.com/en/news/aps-plans-2gw-gas-plant-to-power-arizona-data-centers-under-subscription-model/", "reliability": "Medium", "used": "APS queue ~18 GW; plant phase 2 ~2031-33"}, {"id": "S26", "source": "MultiState - State data center policy shifts (22 Jun 2026)", "url": "https://www.multistate.us/insider/2026/6/22/state-data-center-policy-shifts-as-governors-impose-new-restrictions", "reliability": "Medium", "used": "Arizona 3-year exemption pause; Virginia status"}, {"id": "S27", "source": "ConstructionOwners - Data center tax incentives, state by state", "url": "https://www.constructionowners.com/insights/data-center-tax-incentives-state-by-state-whos-still-giving-whos-taking-back", "reliability": "Low", "used": "Ohio pause (27 May 2026), Texas/Virginia status"}, {"id": "S28", "source": "Sales.tax - Ohio, Arizona, Illinois pause exemptions", "url": "https://sales.tax/sales-tax-updates/data-center-sales-tax-exemption-paused-ohio-arizona-illinois-2026/", "reliability": "Low", "used": "Ohio/Arizona pauses; Texas 2027 repeal risk"}, {"id": "S29", "source": "HomeSnacks - riskiest county per state (FEMA NRI v1.20, Dec 2025)", "url": "https://www.homesnacks.com/riskiest-county-in-every-state/", "reliability": "Low", "used": "Maricopa County in national top 5"}, {"id": "S30", "source": "Insurance Journal - FEMA's first National Risk Index (2021)", "url": "https://www.insurancejournal.com/news/national/2021/01/05/596059.htm", "reliability": "Medium", "used": "Dallas top 10 and hail; Loudoun lowest (2021 vintage)"}, {"id": "S31", "source": "ProtectMyZip - Grant County, WA (NRI v1.20-derived)", "url": "https://protectmyzip.com/county/wa/grant", "reliability": "Low", "used": "Grant County 44/100 moderate"}, {"id": "S32", "source": "Cambridge Associates / Ceres - data centers and water stress (WRI Aqueduct)", "url": "https://view.ceros.com/cambridge-associates/figure-4-data-centers-water-stress", "reliability": "Medium", "used": "Phoenix extremely high; NoVA medium-high"}, {"id": "S33", "source": "Area Development - Rethinking water in site selection (Q2 2026)", "url": "https://www.areadevelopment.com/data-centers/q2-2026/rethinking-water-in-data-center-site-selection.shtml", "reliability": "Medium", "used": "Columbus water supply"}, {"id": "S34", "source": "Smart Water Magazine - First Street climate-risk assessment of data center markets", "url": "https://smartwatermagazine.com/news/smart-water-magazine/more-half-data-centers-face-drought-or-flood-risk-report-finds", "reliability": "Medium", "used": "NoVA among highest composite climate risk"}, {"id": "S35", "source": "Cedar Mill News - Hillsboro and Oregon move to limit data center growth (Aug 2026)", "url": "https://cedarmillnews.com/article/0826-hillsboro-and-oregon-are-moving-to-limit-data-center-growth/", "reliability": "Medium", "used": "Oregon tax-break moratorium; Hillsboro landing stations"}, {"id": "S36", "source": "Interconnection.fyi - Virginia fast-track large-load queue case PUR-2026-00011", "url": "https://newsletter.interconnection.fyi/p/colocation-in-ercot-evolves-virginia", "reliability": "Medium", "used": "Virginia SCC fast-track proposal; ERCOT batch rules"}, {"id": "S37", "source": "ElectricChoice - data center moratorium tracker", "url": "https://www.electricchoice.com/datacenters/moratoriums/", "reliability": "Low", "used": "NOT used in scoring. Lists a Texas action on new grid connections (3 Aug 2026) that could not be verified - see open questions"}, {"id": "Not retrieved / gaps", "source": null, "url": null, "reliability": null, "used": null}], "ref": {"scores": {"Base": [61.844744778323, 29.7292396054591, 41.1398363239937, 40.6033286243784, 72.5251205742639, 47.3263726332648], "Power-first": [64.8320651020228, 33.3949479967773, 41.5498377655161, 33.1340758285564, 74.3786072551442, 42.7026300847047], "Latency-first": [52.9358058461912, 30.0290943382407, 43.3863160261547, 52.7643299025591, 74.4637371173251, 54.0029349627535], "Cost-first": [63.9549262527294, 23.8636764813594, 40.7047865404674, 41.4082865392937, 74.372849105859, 43.6610528523362], "Risk/Regulatory-first": [60.6434075060279, 28.3210803486413, 31.6573236202819, 45.991733686409, 65.8222588850013, 45.5802747994711], "Speed-to-market": [63.5016647838189, 28.3562141409702, 44.9005126517427, 35.9745575818361, 76.1927348400614, 45.4348712793858]}, "sweep": [[0.1, 57.2934175024432, 24.2337610258342, 40.8818801517549, 48.9899939456294, 70.0322978811964, 53.191398960539], [0.15, 58.4312493214131, 25.6076306707404, 40.9463691948146, 46.8933276153167, 70.6555035544633, 51.7251423787205], [0.2, 59.5690811403831, 26.9815003156467, 41.0108582378743, 44.7966612850039, 71.2787092277301, 50.2588857969019], [0.25, 60.706912959353, 28.3553699605529, 41.075347280934, 42.6999949546912, 71.901914900997, 48.7926292150833], [0.3, 61.844744778323, 29.7292396054591, 41.1398363239937, 40.6033286243784, 72.5251205742639, 47.3263726332648], [0.35, 62.982576597293, 31.1031092503653, 41.2043253670533, 38.5066622940657, 73.1483262475307, 45.8601160514462], [0.4, 64.1204084162629, 32.4769788952716, 41.268814410113, 36.4099959637529, 73.7715319207976, 44.3938594696277], [0.45, 65.2582402352329, 33.8508485401778, 41.3333034531727, 34.3133296334402, 74.3947375940645, 42.9276028878091], [0.5, 66.3960720542028, 35.224718185084, 41.3977924962324, 32.2166633031275, 75.0179432673313, 41.4613463059905], [0.55, 67.5339038731728, 36.5985878299903, 41.4622815392921, 30.1199969728147, 75.6411489405982, 39.995089724172], [0.6, 68.6717356921428, 37.9724574748965, 41.5267705823518, 28.023330642502, 76.2643546138651, 38.5288331423534]], "grid": [[0.15, 0.05, 61.3488827502386, 23.7577400781774, 39.9978095863529, 41.7777924367745, 69.1119123848301, 49.5446287792719], [0.15, 0.1, 59.8247458844342, 24.7241008354865, 40.4933257997284, 44.4500869330279, 69.9182659809071, 50.6837030476405], [0.15, 0.2, 56.7764721528255, 26.6568223501045, 41.4843582264794, 49.7946759255346, 71.5309731730611, 52.9618515843779], [0.15, 0.3, 53.7281984212168, 28.5895438647226, 42.4753906532304, 55.1392649180414, 73.1436803652152, 55.2400001211153], [0.25, 0.05, 63.1019851770456, 26.8368030562101, 40.2966789456296, 38.5006750320073, 70.6347878214474, 47.0026553647897], [0.25, 0.1, 61.5778483112412, 27.8031638135192, 40.7921951590051, 41.1729695282607, 71.4411414175244, 48.1417296331584], [0.25, 0.2, 58.5295745796325, 29.7358853281372, 41.7832275857561, 46.5175585207674, 73.0538486096784, 50.4198781698957], [0.25, 0.3, 55.4813008480238, 31.6686068427553, 42.7742600125071, 51.8621475132742, 74.6665558018325, 52.6980267066331], [0.35, 0.05, 64.8550876038526, 29.9158660342428, 40.5955483049063, 35.2235576272401, 72.1576632580647, 44.4606819503076], [0.35, 0.1, 63.3309507380482, 30.8822267915519, 41.0910645182818, 37.8958521234935, 72.9640168541417, 45.5997562186762], [0.35, 0.2, 60.2826770064395, 32.8149483061699, 42.0820969450328, 43.2404411160003, 74.5767240462957, 47.8779047554136], [0.35, 0.3, 57.2344032748308, 34.747669820788, 43.0731293717838, 48.585030108507, 76.1894312384497, 50.156053292151], [0.45, 0.05, 66.6081900306596, 32.9949290122755, 40.894417664183, 31.9464402224729, 73.680538694682, 41.9187085358254], [0.45, 0.1, 65.0840531648552, 33.9612897695846, 41.3899338775585, 34.6187347187263, 74.486892290759, 43.0577828041941], [0.45, 0.2, 62.0357794332465, 35.8940112842026, 42.3809663043095, 39.9633237112331, 76.099599482913, 45.3359313409314], [0.45, 0.3, 58.9875057016379, 37.8267327988207, 43.3719987310605, 45.3079127037398, 77.712306675067, 47.6140798776688]]}, "sourcedMax": 0.34};
+const M=D.markets, C=D.categories, V=D.variables;
+const SHORT=["Seattle / Quincy","Hillsboro / Portland","Phoenix","Northern Virginia","Dallas-Fort Worth","Columbus"];
+const COL=["var(--c0)","var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"];
+const SCEN=Object.keys(D.scenarios);
+const MEMO_PICK=4; // Dallas-Fort Worth
+
+// ---------- engine (mirrors Scoring sheet) ----------
+const NORM=V.map(v=>{
+  if(v.type==="rubric")return v.values.map(x=>((v.better==="higher"?x-1:5-x)/4)*100);
+  const t=v.values.map(x=>v.transform==="log"?Math.log(x):x),lo=Math.min(...t),hi=Math.max(...t);
+  return t.map(x=>hi===lo?50:((v.better==="higher"?x-lo:hi-x)/(hi-lo))*100);
+});
+function score(w,src){
+  const tot=Array(6).fill(0);let ws=0;
+  V.forEach((v,k)=>{ if(src&&v.judgment>D.sourcedMax)return;
+    const vw=w[C.indexOf(v.cat)]*v.share; ws+=vw; for(let i=0;i<6;i++)tot[i]+=vw*NORM[k][i];});
+  return tot.map(t=>t/ws);
+}
+function catScores(){return C.map(c=>{const out=Array(6).fill(0);let s=0;
+  V.forEach((v,k)=>{if(v.cat!==c)return;s+=v.share;for(let i=0;i<6;i++)out[i]+=v.share*NORM[k][i];});return out.map(x=>x/s);});}
+const CAT=catScores();
+const ranks=a=>a.map(x=>1+a.filter(y=>y>x).length);
+const leader=a=>a.indexOf(Math.max(...a));
+const f1=x=>x.toFixed(1);
+
+// ---------- state ----------
+let st={scen:"Base",w:[...D.scenarios.Base],src:false,sel:MEMO_PICK,sort:{k:"id",d:1}};
+const $=id=>document.getElementById(id);
+const cur=()=>score(st.w,st.src);
+const scenScores=n=>score(D.scenarios[n],st.src);
+
+// ---------- controls ----------
+function buildControls(){
+  $("chips").innerHTML=SCEN.map(n=>`<button class="chip" data-s="${n}">${n}</button>`).join("");
+  $("chips").onclick=e=>{const s=e.target.dataset.s;if(!s)return;st.scen=s;st.w=[...D.scenarios[s]];sync();render();};
+  $("sliders").innerHTML=C.map((c,i)=>`<div class="sl"><label><span>${c}</span><b id="sv${i}"></b></label><input type="range" min="0" max="70" step="1" id="s${i}"></div>`).join("");
+  C.forEach((c,i)=>$("s"+i).oninput=e=>setWeight(i,+e.target.value/100));
+  $("srcOnly").onchange=e=>{st.src=e.target.checked;render();};
+  $("reset").onclick=()=>{st.w=[...D.scenarios[st.scen==="Custom"?"Base":st.scen]];if(st.scen==="Custom")st.scen="Base";sync();render();};
+  $("theme").onclick=()=>{const r=document.documentElement,d=r.dataset.theme==="dark"||(!r.dataset.theme&&matchMedia("(prefers-color-scheme:dark)").matches);r.dataset.theme=d?"light":"dark";render();};
+}
+function setWeight(i,val){ // keep sum at 100%: rescale the others pro rata
+  const rest=1-st.w[i];val=Math.min(val,0.7);
+  const k=rest>1e-9?(1-val)/rest:0;
+  st.w=st.w.map((x,j)=>j===i?val:(rest>1e-9?x*k:(1-val)/(C.length-1)));
+  st.scen="Custom";sync();render();
+}
+function sync(){
+  document.querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",b.dataset.s===st.scen));
+  C.forEach((c,i)=>{$("s"+i).value=Math.round(st.w[i]*100);$("sv"+i).textContent=Math.round(st.w[i]*100)+"%";});
+  $("wsum").textContent=st.scen==="Custom"?"custom":st.scen;
+}
+
+// ---------- tabs ----------
+const TABS=[["p-rank","Ranking"],["p-mkt","Market detail"],["p-sens","Sensitivity"],["p-var","Variables"],["p-memo","Memo"]];
+let tab="p-rank";
+function buildTabs(){
+  $("tabs").innerHTML=TABS.map(([id,l])=>`<button class="tab" data-t="${id}">${l}</button>`).join("");
+  $("tabs").onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;showTab();}};
+}
+function showTab(){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id===tab));
+}
+
+// ---------- renderers ----------
+function banner(s){
+  const l=leader(s),sorted=[...s].sort((a,b)=>b-a),gap=sorted[0]-sorted[1];
+  const agree=l===MEMO_PICK;
+  $("banner").style.borderColor=agree?"var(--good)":"var(--warn)";
+  $("banner").innerHTML=`<b>${SHORT[l]} leads at ${f1(s[l])}</b>, ${f1(gap)} points clear of ${SHORT[s.indexOf(sorted[1])]}.<br>
+  <span class="note">${agree?"Consistent with the memo's recommendation (Dallas-Fort Worth first).":"<b style='color:var(--warn)'>Differs from the memo's recommendation (Dallas-Fort Worth first)</b> under these weights."}${st.src?" Showing sourced-data-only variables.":""}</span>`;
+}
+function rank(s){
+  const base=ranks(scenScores("Base")),r=ranks(s);
+  const rr=SCEN.map(n=>ranks(scenScores(n)));
+  const order=[...s.keys()].sort((a,b)=>s[b]-s[a]);
+  $("rank").innerHTML=order.map(i=>{
+    const d=base[i]-r[i],lo=Math.min(...rr.map(x=>x[i])),hi=Math.max(...rr.map(x=>x[i]));
+    return `<div class="row ${i===st.sel?"sel":""}" data-m="${i}"><span><b>${r[i]}.</b> ${SHORT[i]}</span>
+    <div class="bar"><i style="width:${s[i]}%;background:${COL[i]}"></i></div>
+    <span class="num">${f1(s[i])} <span class="delta ${d>0?"up":d<0?"dn":""}">${d>0?"▲"+d:d<0?"▼"+(-d):"–"} · ${lo===hi?lo:lo+"–"+hi}</span></span></div>`;}).join("");
+  $("rank").onclick=e=>{const m=e.target.closest(".row");if(m){st.sel=+m.dataset.m;tab="p-mkt";render();}};
+  $("rtab").innerHTML=`<tr><th>Market</th>${SCEN.map(n=>`<th class="r">${n.replace("/Regulatory","")}</th>`).join("")}</tr>`+
+   M.map((m,i)=>`<tr><td>${SHORT[i]}</td>${rr.map(x=>`<td class="r" style="${x[i]===1?"color:var(--good);font-weight:700":""}">${x[i]}</td>`).join("")}</tr>`).join("");
+}
+function radar(){
+  const n=C.length,R=110,cx=150,cy=140,pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n;return[cx+R*v/100*Math.cos(a),cy+R*v/100*Math.sin(a)];};
+  const poly=vals=>vals.map((v,i)=>pt(i,v).join(",")).join(" ");
+  let g=[25,50,75,100].map(l=>`<polygon points="${poly(C.map(()=>l))}" fill="none" stroke="var(--line)"/>`).join("");
+  g+=C.map((c,i)=>{const[x,y]=pt(i,118);return `<text x="${x}" y="${y}" text-anchor="middle">${c.split(" ")[0]}</text>`;}).join("");
+  const top=ranks(cur()).indexOf(1);
+  g+=`<polygon points="${poly(CAT.map(r=>r[top]))}" fill="none" stroke="var(--mut)" stroke-dasharray="4 3"/>`;
+  g+=`<polygon points="${poly(CAT.map(r=>r[st.sel]))}" fill="${COL[st.sel]}" fill-opacity=".25" stroke="${COL[st.sel]}" stroke-width="2"/>`;
+  $("radar").innerHTML=`<svg viewBox="0 0 300 280" width="100%">${g}</svg><div class="note">Solid: ${SHORT[st.sel]}. Dashed: current leader (${SHORT[top]}).</div>`;
+}
+function market(){
+  $("mchips").innerHTML=M.map((m,i)=>`<button class="chip ${i===st.sel?"on":""}" data-m="${i}">${SHORT[i]}</button>`).join("");
+  $("mchips").onclick=e=>{if(e.target.dataset.m){st.sel=+e.target.dataset.m;render();}};
+  radar();
+  const pick=["A1","A2","B1","B2","B3","C2","D1","D2","E1"];
+  $("kv").innerHTML=pick.map(id=>{const k=V.findIndex(v=>v.id===id),v=V[k];
+    return `<tr><td>${v.name.replace(/\s*\(.*\)/,"")}</td><td class="r">${fmt(v.values[st.sel])} <span class="note">${v.unit}</span></td><td class="r">${Math.round(NORM[k][st.sel])}</td></tr>`;}).join("");
+  $("kv").insertAdjacentHTML("afterbegin","<tr><th>Variable</th><th class=r>Value</th><th class=r>Score</th></tr>");
+  $("facts").innerHTML=D.facts.map(f=>`<tr><td style="white-space:nowrap"><b>${f.topic}</b></td><td>${f.by[st.sel]||""}</td></tr>`).join("");
+}
+const fmt=x=>Number.isInteger(x)?x:(Math.abs(x)<10?x.toFixed(2):x.toFixed(1));
+
+function sweep(){
+  const base=D.scenarios.Base,pts=[];
+  for(let p=10;p<=60;p+=2.5){const k=(1-p/100)/(1-base[0]);
+    pts.push([p,score([p/100,...base.slice(1).map(x=>x*k)],st.src)]);}
+  const W=640,H=260,L=36,B=24,x=p=>L+(p-10)/50*(W-L-10),all=pts.flatMap(p=>p[1]),lo=Math.floor(Math.min(...all)/10)*10,hi=Math.ceil(Math.max(...all)/10)*10,y=v=>H-B-(v-lo)/(hi-lo)*(H-B-10);
+  let g="";for(let v=lo;v<=hi;v+=10)g+=`<line x1="${L}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  for(let p=10;p<=60;p+=10)g+=`<text x="${x(p)}" y="${H-6}" text-anchor="middle">${p}%</text>`;
+  M.forEach((m,i)=>{g+=`<polyline fill="none" stroke="${COL[i]}" stroke-width="${i===st.sel?3:1.8}" points="${pts.map(p=>x(p[0])+","+y(p[1][i])).join(" ")}"/>`;});
+  const cw=st.w[0]*100;if(cw>=10&&cw<=60)g+=`<line x1="${x(cw)}" x2="${x(cw)}" y1="10" y2="${H-B}" stroke="var(--acc)" stroke-dasharray="4 3"/><text x="${x(cw)+4}" y="20">current</text>`;
+  $("sweep").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+  $("slegend").innerHTML=M.map((m,i)=>`<span><i style="background:${COL[i]}"></i>${SHORT[i]}</span>`).join("");
+  const leaders=new Set(pts.map(p=>leader(p[1])));
+  $("sweepnote").textContent=leaders.size===1?`${SHORT[[...leaders][0]]} leads at every power weight from 10% to 60%.`:`Leadership changes across this range: ${[...leaders].map(i=>SHORT[i]).join(", ")}.`;
+}
+function heat(){
+  const base=D.scenarios.Base,P=[10,15,25,35,45,50],Lt=[5,10,20,30,40],seen=new Set();
+  let h=`<tr><td class="note" style="background:none;color:var(--mut)">Power \\ Latency</td>${Lt.map(l=>`<td style="background:none;color:var(--mut)">${l}%</td>`).join("")}</tr>`;
+  P.forEach(p=>{h+=`<tr><td style="background:none;color:var(--mut)">${p}%</td>`;
+    Lt.forEach(l=>{const k=(1-(p+l)/100)/(1-base[0]-base[2]);
+      if(k<=0){h+=`<td style="background:var(--line)">–</td>`;return;}
+      const w=[p/100,base[1]*k,l/100,base[3]*k,base[4]*k,base[5]*k,base[6]*k],s=score(w,st.src),ld=leader(s);
+      const srt=[...s].sort((a,b)=>b-a);seen.add(ld);
+      h+=`<td style="background:${COL[ld]}" title="${SHORT[ld]} leads by ${f1(srt[0]-srt[1])}">${SHORT[ld].split(/[ \/]/)[0]}<br>+${f1(srt[0]-srt[1])}</td>`;});
+    h+="</tr>";});
+  $("heat").innerHTML=h;
+  $("heatnote").textContent=`Cell = leader and lead margin in points. Distinct leaders in grid: ${[...seen].map(i=>SHORT[i]).join(", ")}. Other categories are scaled pro rata from Base.`;
+}
+function vars(){
+  const k=st.sort.k,d=st.sort.d,rows=V.map((v,i)=>({v,i,w:st.w[C.indexOf(v.cat)]*v.share}));
+  rows.sort((a,b)=>{const x=k==="w"?a.w:k==="j"?a.v.judgment:a.v[k==="id"?"id":"cat"],y=k==="w"?b.w:k==="j"?b.v.judgment:b.v[k==="id"?"id":"cat"];return (x>y?1:x<y?-1:0)*d;});
+  $("vtab").innerHTML=`<tr><th data-k="id">ID</th><th data-k="cat">Category</th><th>Variable</th><th class="r" data-k="w">Weight</th><th class="r" data-k="j">Judgment</th>${M.map((m,i)=>`<th class="r">${SHORT[i].split(/[ \/]/)[0]}</th>`).join("")}<th>Confidence</th><th>Sources</th></tr>`+
+   rows.map(({v,i,w})=>`<tr title="${(v.notes||"").replace(/"/g,"&quot;")}"><td>${v.id}</td><td>${v.cat}</td><td>${v.name}<br><span class="note">${v.unit}, ${v.better} is better</span></td>
+   <td class="r">${f1(w*100)}%</td><td class="r"><span class="pill" style="${v.judgment>D.sourcedMax?"color:var(--warn)":""}">${Math.round(v.judgment*100)}%</span></td>
+   ${v.values.map(x=>`<td class="r">${fmt(x)}</td>`).join("")}<td>${v.confidence||""}</td><td class="note">${v.sources||""}</td></tr>`).join("");
+  $("vtab").onclick=e=>{const kk=e.target.dataset.k;if(kk){st.sort={k:kk,d:st.sort.k===kk?-st.sort.d:1};vars();}};
+  const jb=V.reduce((a,v)=>a+st.w[C.indexOf(v.cat)]*v.share*v.judgment,0);
+  $("judg").innerHTML=`<b>${Math.round(jb*100)}%</b> of the current weight rests on analyst judgment rather than sourced data.`;
+}
+function memo(s){
+  const l=leader(s);
+  $("p-memo").innerHTML=`<h3>Recommendation memo (summary) <a class="note" href="DC_Site_Recommendation_Memo.docx">open full .docx</a></h3>
+  <p><b>Recommendation.</b> Lead with Dallas-Fort Worth for a first-phase 50-100 MW deployment (energized 2028-2029), targeting powered sites with a bridging-power plan. Keep Seattle/Quincy as second option for latency-tolerant AI training. Do not plan new large-load capacity in Hillsboro or Northern Virginia on this timeline.</p>
+  <p class="note">Live check: under the weights you have set, <b>${SHORT[l]}</b> ranks first${l===MEMO_PICK?", consistent with the memo.":", which differs from the memo, so re-test its assumptions."}</p>
+  <h4>Key assumptions</h4><ul><li>Illustrative requirement of 50-100 MW, hyperscale or AI workload, lease or build.</li><li>About 49% of base weight rests on analyst scores or estimates; each is labeled in the Variables tab.</li><li>Power prices are 2024 state averages; broker vacancy and rents mix sources, size tiers and dates (Phoenix vacancy is mid-2025).</li><li>Latency is a physics estimate; FEMA NRI county scores were not pulled directly.</li></ul>
+  <h4>Risks to the DFW recommendation</h4><ul><li><b>Queue and timing:</b> ERCOT reports roughly 427-474 GW of large-load requests; plan for slippage past 2028.</li><li><b>SB6 terms:</b> reported $50M security per GW, study fees from $100,000, curtailment rights during load shed.</li><li><b>Little to lease:</b> ~765 MW under construction and ~95% preleased; powered-land prices rising.</li><li><b>Policy and hazard:</b> sales-tax exemption intact but a possible 2027 repeal target; high hail and flood exposure.</li></ul>
+  <h4>Open questions</h4>
+  <div class="grid2"><div><b>Legal</b><ul><li>SB6 curtailment, disclosure and collateral obligations</li><li>Take-or-pay floors (60-85%) and NNN structures</li><li>Zoning and entitlement path; confirm the unverified 3 Aug 2026 PUCT action</li></ul></div>
+  <div><b>Finance</b><ul><li>All-in cost per kW including NNN and power floors</li><li>Funding interconnection deposits</li><li>Texas exemption value vs repeal risk</li><li>Price of delay vs premium for earlier power; lease vs build</li></ul></div>
+  <div><b>Engineering</b><ul><li>Latency tolerance (could favor Seattle/Quincy or Columbus)</li><li>Rack density and liquid-cooling conversion</li><li>Behind-the-meter or bridging power feasibility</li><li>Design for hail, flood and water use</li></ul></div>
+  <div><b>Next steps</b><ul><li>Replace estimates with primary broker reports and FEMA NRI download</li><li>Request utility load studies for 3-5 DFW sites</li><li>Compare West Texas as an alternative</li></ul></div></div>`;
+}
+
+function render(){
+  const s=cur();sync();banner(s);rank(s);market();sweep();heat();vars();memo(s);showTab();
+  $("srcOnly").checked=st.src;
+}
+buildControls();buildTabs();render();
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Center Siting Dashboard</title>
+<style>
+:root{--bg:#f6f5f1;--panel:#fff;--ink:#1c1f23;--mut:#5f6670;--line:#dedbd2;--acc:#0b5cab;--good:#1b7a46;--bad:#b3341f;--warn:#9a6a00;
+--c0:#2a7f8e;--c1:#8a5a9e;--c2:#c8682b;--c3:#3e5fa8;--c4:#1f8a4c;--c5:#a68a1c;--heat:#0b5cab}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14171a;--panel:#1d2126;--ink:#e8eaed;--mut:#9aa3ad;--line:#333a42;--acc:#6aa9e8;--good:#5cc489;--bad:#ef8a76;--warn:#e0b04a;
+--c0:#5bbccb;--c1:#c093d6;--c2:#ea9660;--c3:#7e9ee0;--c4:#5cc489;--c5:#d9bf55;--heat:#6aa9e8}}
+:root[data-theme=dark]{--bg:#14171a;--panel:#1d2126;--ink:#e8eaed;--mut:#9aa3ad;--line:#333a42;--acc:#6aa9e8;--good:#5cc489;--bad:#ef8a76;--warn:#e0b04a;
+--c0:#5bbccb;--c1:#c093d6;--c2:#ea9660;--c3:#7e9ee0;--c4:#5cc489;--c5:#d9bf55;--heat:#6aa9e8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 24px 12px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:20px;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:12.5px;max-width:760px}
+button{font:inherit;color:inherit;cursor:pointer}
+.ghost{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--mut)}
+.wrap{display:grid;grid-template-columns:290px 1fr;gap:20px;padding:20px 24px;max-width:1380px;margin:0 auto}
+@media (max-width:900px){.wrap{grid-template-columns:1fr;padding:16px}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.rail h3,.panel h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 11px;font-size:12.5px}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.sl{margin:10px 0}
+.sl label{display:flex;justify-content:space-between;font-size:12.5px}
+.sl input{width:100%;accent-color:var(--acc)}
+.tog{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:12.5px}
+.banner{border-left:4px solid var(--acc);padding:12px 16px;margin-bottom:16px}
+.banner b{font-size:16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--mut)}
+.tab.on{color:var(--ink);border-color:var(--acc);font-weight:600}
+.pane{display:none}.pane.on{display:block}
+.row{display:grid;grid-template-columns:150px 1fr 92px;gap:10px;align-items:center;padding:6px 0;cursor:pointer;border-radius:6px}
+.row:hover{background:color-mix(in srgb,var(--acc) 7%,transparent)}
+.row.sel{outline:1.5px solid var(--acc)}
+.bar{height:20px;background:var(--line);border-radius:4px;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;transition:width .25s}
+.num{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+.delta{font-size:11.5px;color:var(--mut);font-weight:400}
+.up{color:var(--good)}.dn{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;cursor:pointer;white-space:nowrap}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.pill{display:inline-block;border-radius:4px;padding:0 6px;font-size:11px;border:1px solid var(--line);color:var(--mut)}
+.note{color:var(--mut);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin:6px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+svg text{fill:var(--mut);font-size:11px}
+.memo h4{margin:14px 0 4px;font-size:14px}.memo ul{margin:4px 0 8px 18px;padding:0}
+.hm td{text-align:center;color:#fff;font-weight:600;font-size:11.5px;padding:8px 4px;border:2px solid var(--panel)}
+@media print{.rail,.tabs{display:none}.pane{display:block!important}.wrap{display:block}}
+</style>
+</head>
+<body>
+<header>
+ <div>
+  <h1>Hyperscale Data Center Siting Dashboard</h1>
+  <div class="sub">Six candidate metros, 18 variables, 7 weighted categories. Scores are relative to these six markets only. Public data as of 7 Oct 2026; portfolio analysis, not investment or legal advice. Source of truth: <code>DC_Site_Scoring_Model.xlsx</code>.</div>
+ </div>
+ <button class="ghost" id="theme">Toggle theme</button>
+</header>
+
+<div class="wrap">
+ <aside class="rail panel" style="align-self:start">
+  <h3>Scenario</h3>
+  <div class="chips" id="chips"></div>
+  <h3>Category weights <span id="wsum" class="pill"></span></h3>
+  <div id="sliders"></div>
+  <label class="tog"><input type="checkbox" id="srcOnly"><span><b>Sourced data only</b><br><span class="note">Drops variables where more than a third of the score is analyst judgment.</span></span></label>
+  <p><button class="ghost" id="reset">Reset to scenario</button></p>
+  <p class="note" id="judg"></p>
+ </aside>
+
+ <main>
+  <div class="panel banner" id="banner"></div>
+  <div class="tabs" id="tabs"></div>
+
+  <section class="pane panel" id="p-rank">
+   <h3>Ranking under current weights <span class="note">(click a market for detail)</span></h3>
+   <div id="rank"></div>
+   <p class="note">Arrows compare with Base. "Range" is best-to-worst rank across the six named scenarios.</p>
+   <h3 style="margin-top:18px">Rank by scenario</h3>
+   <div class="tw"><table id="rtab"></table></div>
+  </section>
+
+  <section class="pane panel" id="p-mkt">
+   <div class="chips" id="mchips"></div>
+   <div class="grid2">
+    <div><h3>Category profile (0-100)</h3><div id="radar"></div></div>
+    <div><h3>Key inputs</h3><div class="tw"><table id="kv"></table></div></div>
+   </div>
+   <h3 style="margin-top:16px">Evidence</h3>
+   <div class="tw"><table id="facts"></table></div>
+  </section>
+
+  <section class="pane panel" id="p-sens">
+   <h3>Power weight sweep (other categories scaled pro rata)</h3>
+   <div id="sweep"></div><div class="legend" id="slegend"></div>
+   <p class="note" id="sweepnote"></p>
+   <h3 style="margin-top:18px">Power x latency weight: who leads?</h3>
+   <div class="tw"><table class="hm" id="heat"></table></div>
+   <p class="note" id="heatnote"></p>
+  </section>
+
+  <section class="pane panel" id="p-var">
+   <h3>Variable explorer <span class="note">(click headers to sort)</span></h3>
+   <div class="tw"><table id="vtab"></table></div>
+  </section>
+
+  <section class="pane panel memo" id="p-memo"></section>
+ </main>
+</div>
+
+<script>
+const D=/*__DATA__*/null;
+const M=D.markets, C=D.categories, V=D.variables;
+const SHORT=["Seattle / Quincy","Hillsboro / Portland","Phoenix","Northern Virginia","Dallas-Fort Worth","Columbus"];
+const COL=["var(--c0)","var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--c5)"];
+const SCEN=Object.keys(D.scenarios);
+const MEMO_PICK=4; // Dallas-Fort Worth
+
+// ---------- engine (mirrors Scoring sheet) ----------
+const NORM=V.map(v=>{
+  if(v.type==="rubric")return v.values.map(x=>((v.better==="higher"?x-1:5-x)/4)*100);
+  const t=v.values.map(x=>v.transform==="log"?Math.log(x):x),lo=Math.min(...t),hi=Math.max(...t);
+  return t.map(x=>hi===lo?50:((v.better==="higher"?x-lo:hi-x)/(hi-lo))*100);
+});
+function score(w,src){
+  const tot=Array(6).fill(0);let ws=0;
+  V.forEach((v,k)=>{ if(src&&v.judgment>D.sourcedMax)return;
+    const vw=w[C.indexOf(v.cat)]*v.share; ws+=vw; for(let i=0;i<6;i++)tot[i]+=vw*NORM[k][i];});
+  return tot.map(t=>t/ws);
+}
+function catScores(){return C.map(c=>{const out=Array(6).fill(0);let s=0;
+  V.forEach((v,k)=>{if(v.cat!==c)return;s+=v.share;for(let i=0;i<6;i++)out[i]+=v.share*NORM[k][i];});return out.map(x=>x/s);});}
+const CAT=catScores();
+const ranks=a=>a.map(x=>1+a.filter(y=>y>x).length);
+const leader=a=>a.indexOf(Math.max(...a));
+const f1=x=>x.toFixed(1);
+
+// ---------- state ----------
+let st={scen:"Base",w:[...D.scenarios.Base],src:false,sel:MEMO_PICK,sort:{k:"id",d:1}};
+const $=id=>document.getElementById(id);
+const cur=()=>score(st.w,st.src);
+const scenScores=n=>score(D.scenarios[n],st.src);
+
+// ---------- controls ----------
+function buildControls(){
+  $("chips").innerHTML=SCEN.map(n=>`<button class="chip" data-s="${n}">${n}</button>`).join("");
+  $("chips").onclick=e=>{const s=e.target.dataset.s;if(!s)return;st.scen=s;st.w=[...D.scenarios[s]];sync();render();};
+  $("sliders").innerHTML=C.map((c,i)=>`<div class="sl"><label><span>${c}</span><b id="sv${i}"></b></label><input type="range" min="0" max="70" step="1" id="s${i}"></div>`).join("");
+  C.forEach((c,i)=>$("s"+i).oninput=e=>setWeight(i,+e.target.value/100));
+  $("srcOnly").onchange=e=>{st.src=e.target.checked;render();};
+  $("reset").onclick=()=>{st.w=[...D.scenarios[st.scen==="Custom"?"Base":st.scen]];if(st.scen==="Custom")st.scen="Base";sync();render();};
+  $("theme").onclick=()=>{const r=document.documentElement,d=r.dataset.theme==="dark"||(!r.dataset.theme&&matchMedia("(prefers-color-scheme:dark)").matches);r.dataset.theme=d?"light":"dark";render();};
+}
+function setWeight(i,val){ // keep sum at 100%: rescale the others pro rata
+  const rest=1-st.w[i];val=Math.min(val,0.7);
+  const k=rest>1e-9?(1-val)/rest:0;
+  st.w=st.w.map((x,j)=>j===i?val:(rest>1e-9?x*k:(1-val)/(C.length-1)));
+  st.scen="Custom";sync();render();
+}
+function sync(){
+  document.querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",b.dataset.s===st.scen));
+  C.forEach((c,i)=>{$("s"+i).value=Math.round(st.w[i]*100);$("sv"+i).textContent=Math.round(st.w[i]*100)+"%";});
+  $("wsum").textContent=st.scen==="Custom"?"custom":st.scen;
+}
+
+// ---------- tabs ----------
+const TABS=[["p-rank","Ranking"],["p-mkt","Market detail"],["p-sens","Sensitivity"],["p-var","Variables"],["p-memo","Memo"]];
+let tab="p-rank";
+function buildTabs(){
+  $("tabs").innerHTML=TABS.map(([id,l])=>`<button class="tab" data-t="${id}">${l}</button>`).join("");
+  $("tabs").onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;showTab();}};
+}
+function showTab(){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id===tab));
+}
+
+// ---------- renderers ----------
+function banner(s){
+  const l=leader(s),sorted=[...s].sort((a,b)=>b-a),gap=sorted[0]-sorted[1];
+  const agree=l===MEMO_PICK;
+  $("banner").style.borderColor=agree?"var(--good)":"var(--warn)";
+  $("banner").innerHTML=`<b>${SHORT[l]} leads at ${f1(s[l])}</b>, ${f1(gap)} points clear of ${SHORT[s.indexOf(sorted[1])]}.<br>
+  <span class="note">${agree?"Consistent with the memo's recommendation (Dallas-Fort Worth first).":"<b style='color:var(--warn)'>Differs from the memo's recommendation (Dallas-Fort Worth first)</b> under these weights."}${st.src?" Showing sourced-data-only variables.":""}</span>`;
+}
+function rank(s){
+  const base=ranks(scenScores("Base")),r=ranks(s);
+  const rr=SCEN.map(n=>ranks(scenScores(n)));
+  const order=[...s.keys()].sort((a,b)=>s[b]-s[a]);
+  $("rank").innerHTML=order.map(i=>{
+    const d=base[i]-r[i],lo=Math.min(...rr.map(x=>x[i])),hi=Math.max(...rr.map(x=>x[i]));
+    return `<div class="row ${i===st.sel?"sel":""}" data-m="${i}"><span><b>${r[i]}.</b> ${SHORT[i]}</span>
+    <div class="bar"><i style="width:${s[i]}%;background:${COL[i]}"></i></div>
+    <span class="num">${f1(s[i])} <span class="delta ${d>0?"up":d<0?"dn":""}">${d>0?"▲"+d:d<0?"▼"+(-d):"–"} · ${lo===hi?lo:lo+"–"+hi}</span></span></div>`;}).join("");
+  $("rank").onclick=e=>{const m=e.target.closest(".row");if(m){st.sel=+m.dataset.m;tab="p-mkt";render();}};
+  $("rtab").innerHTML=`<tr><th>Market</th>${SCEN.map(n=>`<th class="r">${n.replace("/Regulatory","")}</th>`).join("")}</tr>`+
+   M.map((m,i)=>`<tr><td>${SHORT[i]}</td>${rr.map(x=>`<td class="r" style="${x[i]===1?"color:var(--good);font-weight:700":""}">${x[i]}</td>`).join("")}</tr>`).join("");
+}
+function radar(){
+  const n=C.length,R=110,cx=150,cy=140,pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n;return[cx+R*v/100*Math.cos(a),cy+R*v/100*Math.sin(a)];};
+  const poly=vals=>vals.map((v,i)=>pt(i,v).join(",")).join(" ");
+  let g=[25,50,75,100].map(l=>`<polygon points="${poly(C.map(()=>l))}" fill="none" stroke="var(--line)"/>`).join("");
+  g+=C.map((c,i)=>{const[x,y]=pt(i,118);return `<text x="${x}" y="${y}" text-anchor="middle">${c.split(" ")[0]}</text>`;}).join("");
+  const top=ranks(cur()).indexOf(1);
+  g+=`<polygon points="${poly(CAT.map(r=>r[top]))}" fill="none" stroke="var(--mut)" stroke-dasharray="4 3"/>`;
+  g+=`<polygon points="${poly(CAT.map(r=>r[st.sel]))}" fill="${COL[st.sel]}" fill-opacity=".25" stroke="${COL[st.sel]}" stroke-width="2"/>`;
+  $("radar").innerHTML=`<svg viewBox="0 0 300 280" width="100%">${g}</svg><div class="note">Solid: ${SHORT[st.sel]}. Dashed: current leader (${SHORT[top]}).</div>`;
+}
+function market(){
+  $("mchips").innerHTML=M.map((m,i)=>`<button class="chip ${i===st.sel?"on":""}" data-m="${i}">${SHORT[i]}</button>`).join("");
+  $("mchips").onclick=e=>{if(e.target.dataset.m){st.sel=+e.target.dataset.m;render();}};
+  radar();
+  const pick=["A1","A2","B1","B2","B3","C2","D1","D2","E1"];
+  $("kv").innerHTML=pick.map(id=>{const k=V.findIndex(v=>v.id===id),v=V[k];
+    return `<tr><td>${v.name.replace(/\s*\(.*\)/,"")}</td><td class="r">${fmt(v.values[st.sel])} <span class="note">${v.unit}</span></td><td class="r">${Math.round(NORM[k][st.sel])}</td></tr>`;}).join("");
+  $("kv").insertAdjacentHTML("afterbegin","<tr><th>Variable</th><th class=r>Value</th><th class=r>Score</th></tr>");
+  $("facts").innerHTML=D.facts.map(f=>`<tr><td style="white-space:nowrap"><b>${f.topic}</b></td><td>${f.by[st.sel]||""}</td></tr>`).join("");
+}
+const fmt=x=>Number.isInteger(x)?x:(Math.abs(x)<10?x.toFixed(2):x.toFixed(1));
+
+function sweep(){
+  const base=D.scenarios.Base,pts=[];
+  for(let p=10;p<=60;p+=2.5){const k=(1-p/100)/(1-base[0]);
+    pts.push([p,score([p/100,...base.slice(1).map(x=>x*k)],st.src)]);}
+  const W=640,H=260,L=36,B=24,x=p=>L+(p-10)/50*(W-L-10),all=pts.flatMap(p=>p[1]),lo=Math.floor(Math.min(...all)/10)*10,hi=Math.ceil(Math.max(...all)/10)*10,y=v=>H-B-(v-lo)/(hi-lo)*(H-B-10);
+  let g="";for(let v=lo;v<=hi;v+=10)g+=`<line x1="${L}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  for(let p=10;p<=60;p+=10)g+=`<text x="${x(p)}" y="${H-6}" text-anchor="middle">${p}%</text>`;
+  M.forEach((m,i)=>{g+=`<polyline fill="none" stroke="${COL[i]}" stroke-width="${i===st.sel?3:1.8}" points="${pts.map(p=>x(p[0])+","+y(p[1][i])).join(" ")}"/>`;});
+  const cw=st.w[0]*100;if(cw>=10&&cw<=60)g+=`<line x1="${x(cw)}" x2="${x(cw)}" y1="10" y2="${H-B}" stroke="var(--acc)" stroke-dasharray="4 3"/><text x="${x(cw)+4}" y="20">current</text>`;
+  $("sweep").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg>`;
+  $("slegend").innerHTML=M.map((m,i)=>`<span><i style="background:${COL[i]}"></i>${SHORT[i]}</span>`).join("");
+  const leaders=new Set(pts.map(p=>leader(p[1])));
+  $("sweepnote").textContent=leaders.size===1?`${SHORT[[...leaders][0]]} leads at every power weight from 10% to 60%.`:`Leadership changes across this range: ${[...leaders].map(i=>SHORT[i]).join(", ")}.`;
+}
+function heat(){
+  const base=D.scenarios.Base,P=[10,15,25,35,45,50],Lt=[5,10,20,30,40],seen=new Set();
+  let h=`<tr><td class="note" style="background:none;color:var(--mut)">Power \\ Latency</td>${Lt.map(l=>`<td style="background:none;color:var(--mut)">${l}%</td>`).join("")}</tr>`;
+  P.forEach(p=>{h+=`<tr><td style="background:none;color:var(--mut)">${p}%</td>`;
+    Lt.forEach(l=>{const k=(1-(p+l)/100)/(1-base[0]-base[2]);
+      if(k<=0){h+=`<td style="background:var(--line)">–</td>`;return;}
+      const w=[p/100,base[1]*k,l/100,base[3]*k,base[4]*k,base[5]*k,base[6]*k],s=score(w,st.src),ld=leader(s);
+      const srt=[...s].sort((a,b)=>b-a);seen.add(ld);
+      h+=`<td style="background:${COL[ld]}" title="${SHORT[ld]} leads by ${f1(srt[0]-srt[1])}">${SHORT[ld].split(/[ \/]/)[0]}<br>+${f1(srt[0]-srt[1])}</td>`;});
+    h+="</tr>";});
+  $("heat").innerHTML=h;
+  $("heatnote").textContent=`Cell = leader and lead margin in points. Distinct leaders in grid: ${[...seen].map(i=>SHORT[i]).join(", ")}. Other categories are scaled pro rata from Base.`;
+}
+function vars(){
+  const k=st.sort.k,d=st.sort.d,rows=V.map((v,i)=>({v,i,w:st.w[C.indexOf(v.cat)]*v.share}));
+  rows.sort((a,b)=>{const x=k==="w"?a.w:k==="j"?a.v.judgment:a.v[k==="id"?"id":"cat"],y=k==="w"?b.w:k==="j"?b.v.judgment:b.v[k==="id"?"id":"cat"];return (x>y?1:x<y?-1:0)*d;});
+  $("vtab").innerHTML=`<tr><th data-k="id">ID</th><th data-k="cat">Category</th><th>Variable</th><th class="r" data-k="w">Weight</th><th class="r" data-k="j">Judgment</th>${M.map((m,i)=>`<th class="r">${SHORT[i].split(/[ \/]/)[0]}</th>`).join("")}<th>Confidence</th><th>Sources</th></tr>`+
+   rows.map(({v,i,w})=>`<tr title="${(v.notes||"").replace(/"/g,"&quot;")}"><td>${v.id}</td><td>${v.cat}</td><td>${v.name}<br><span class="note">${v.unit}, ${v.better} is better</span></td>
+   <td class="r">${f1(w*100)}%</td><td class="r"><span class="pill" style="${v.judgment>D.sourcedMax?"color:var(--warn)":""}">${Math.round(v.judgment*100)}%</span></td>
+   ${v.values.map(x=>`<td class="r">${fmt(x)}</td>`).join("")}<td>${v.confidence||""}</td><td class="note">${v.sources||""}</td></tr>`).join("");
+  $("vtab").onclick=e=>{const kk=e.target.dataset.k;if(kk){st.sort={k:kk,d:st.sort.k===kk?-st.sort.d:1};vars();}};
+  const jb=V.reduce((a,v)=>a+st.w[C.indexOf(v.cat)]*v.share*v.judgment,0);
+  $("judg").innerHTML=`<b>${Math.round(jb*100)}%</b> of the current weight rests on analyst judgment rather than sourced data.`;
+}
+function memo(s){
+  const l=leader(s);
+  $("p-memo").innerHTML=`<h3>Recommendation memo (summary) <a class="note" href="DC_Site_Recommendation_Memo.docx">open full .docx</a></h3>
+  <p><b>Recommendation.</b> Lead with Dallas-Fort Worth for a first-phase 50-100 MW deployment (energized 2028-2029), targeting powered sites with a bridging-power plan. Keep Seattle/Quincy as second option for latency-tolerant AI training. Do not plan new large-load capacity in Hillsboro or Northern Virginia on this timeline.</p>
+  <p class="note">Live check: under the weights you have set, <b>${SHORT[l]}</b> ranks first${l===MEMO_PICK?", consistent with the memo.":", which differs from the memo, so re-test its assumptions."}</p>
+  <h4>Key assumptions</h4><ul><li>Illustrative requirement of 50-100 MW, hyperscale or AI workload, lease or build.</li><li>About 49% of base weight rests on analyst scores or estimates; each is labeled in the Variables tab.</li><li>Power prices are 2024 state averages; broker vacancy and rents mix sources, size tiers and dates (Phoenix vacancy is mid-2025).</li><li>Latency is a physics estimate; FEMA NRI county scores were not pulled directly.</li></ul>
+  <h4>Risks to the DFW recommendation</h4><ul><li><b>Queue and timing:</b> ERCOT reports roughly 427-474 GW of large-load requests; plan for slippage past 2028.</li><li><b>SB6 terms:</b> reported $50M security per GW, study fees from $100,000, curtailment rights during load shed.</li><li><b>Little to lease:</b> ~765 MW under construction and ~95% preleased; powered-land prices rising.</li><li><b>Policy and hazard:</b> sales-tax exemption intact but a possible 2027 repeal target; high hail and flood exposure.</li></ul>
+  <h4>Open questions</h4>
+  <div class="grid2"><div><b>Legal</b><ul><li>SB6 curtailment, disclosure and collateral obligations</li><li>Take-or-pay floors (60-85%) and NNN structures</li><li>Zoning and entitlement path; confirm the unverified 3 Aug 2026 PUCT action</li></ul></div>
+  <div><b>Finance</b><ul><li>All-in cost per kW including NNN and power floors</li><li>Funding interconnection deposits</li><li>Texas exemption value vs repeal risk</li><li>Price of delay vs premium for earlier power; lease vs build</li></ul></div>
+  <div><b>Engineering</b><ul><li>Latency tolerance (could favor Seattle/Quincy or Columbus)</li><li>Rack density and liquid-cooling conversion</li><li>Behind-the-meter or bridging power feasibility</li><li>Design for hail, flood and water use</li></ul></div>
+  <div><b>Next steps</b><ul><li>Replace estimates with primary broker reports and FEMA NRI download</li><li>Request utility load studies for 3-5 DFW sites</li><li>Compare West Texas as an alternative</li></ul></div></div>`;
+}
+
+function render(){
+  const s=cur();sync();banner(s);rank(s);market();sweep();heat();vars();memo(s);showTab();
+  $("srcOnly").checked=st.src;
+}
+buildControls();buildTabs();render();
+</script>
+</body>
+</html>
